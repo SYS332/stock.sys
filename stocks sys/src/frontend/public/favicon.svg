@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Dark background circle -->
+  <circle cx="16" cy="16" r="15" fill="#121212" stroke="#3a506b" stroke-width="1" />
+  
+  <!-- Stock chart line -->
+  <polyline
+    points="4,22 7,19 10,20 13,14 16,17 19,11 22,8 25,10 28,6"
+    fill="none"
+    stroke="#4a6583"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  
+  <!-- Text: S -->
+  <text
+    x="10"
+    y="24"
+    font-family="Arial, sans-serif"
+    font-size="18"
+    font-weight="bold"
+    fill="#e0e0e0"
+  >S</text>
+</svg>

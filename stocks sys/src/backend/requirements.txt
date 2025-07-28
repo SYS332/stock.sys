@@ -1,0 +1,99 @@
+# FastAPI Backend Requirements for Stock Analysis Application
+
+# Core FastAPI and web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# HTTP client for API calls
+aiohttp==3.9.1
+httpx==0.25.2
+
+# Data processing and analysis
+pandas==2.1.4
+numpy==1.24.4
+
+# Encryption and security
+cryptography==41.0.8
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Environment and configuration
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Scheduling
+APScheduler==3.10.4
+pytz==2023.3
+
+# Telegram bot
+python-telegram-bot==20.7
+
+# Technical analysis (optional, for advanced indicators)
+TA-Lib==0.4.28
+yfinance==0.2.28
+
+# Logging and monitoring
+structlog==23.2.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.2  # For testing FastAPI
+
+# Development tools
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+pre-commit==3.6.0
+
+# CORS middleware
+python-cors==1.0.1
+
+# WebSocket support
+websockets==12.0
+
+# JSON handling
+orjson==3.9.10
+
+# Date/time utilities
+python-dateutil==2.8.2
+
+# Async database support
+asyncpg==0.29.0  # For PostgreSQL (optional)
+aiosqlite==0.19.0  # For async SQLite
+
+# Rate limiting
+slowapi==0.1.9
+
+# Caching
+redis==5.0.1  # Optional for caching
+aioredis==2.0.1
+
+# File handling
+openpyxl==3.1.2  # For Excel export
+xlsxwriter==3.1.9
+
+# Email notifications (optional)
+aiosmtplib==3.0.1
+email-validator==2.1.0
+
+# Monitoring and health checks
+psutil==5.9.6
+
+# API documentation
+mkdocs==1.5.3
+mkdocs-material==9.4.8
+
+# Environment-specific dependencies
+# Development
+watchfiles==0.21.0  # For auto-reload in development
+
+# Production
+gunicorn==21.2.0  # WSGI server for production

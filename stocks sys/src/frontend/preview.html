@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Analysis System - Preview</title>
+  <!-- TradingView Widget Library -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+  <style>
+    :root {
+      --primary-color: #1E88E5;
+      --secondary-color: #4CAF50;
+      --background-color: #121212;
+      --card-background: #1E1E1E;
+      --text-color: #E0E0E0;
+      --border-color: #333;
+      --hover-color: #2C2C2C;
+      --accent-color: #BB86FC;
+      --positive-color: #4CAF50;
+      --negative-color: #F44336;
+
+      --neutral-color: #FFB74D;
+      --table-header-bg: #1A1A1A;
+      --table-row-hover: #2A2A2A;
+      --chart-height: 100vh;
+      --chart-collapsed-height: 400px;
+      --animation-duration: 0.5s;
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background-color);
+      color: var(--text-color);
+    }
+    
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    .navbar {
+      width: 250px;
+      background-color: #0A0A0A;
+      color: var(--text-color);
+      padding: 20px 0;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .navbar-brand {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .navbar-brand h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--accent-color);
+    }
+    
+    .navbar-nav {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    
+    .nav-item {
+      margin: 5px 0;
+    }
+    
+    .nav-link {
+      display: block;
+      padding: 10px 20px;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    .nav-link:hover, .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--accent-color);
+      border-left: 4px solid var(--accent-color);
+    }
+    
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .dashboard-content {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity var(--animation-duration) ease-out, transform var(--animation-duration) ease-out;
+    }
+    
+    .dashboard-content.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .stock-selector {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .stock-selector select {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--card-background);
+      color: var(--text-color);
+    }
+    
+    .chart-container {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
+      height: var(--chart-height);
+      border: 1px solid var(--border-color);
+      position: relative;
+      transition: all var(--animation-duration) ease-in-out;
+    }
+    
+    .chart-container.collapsed {
+      height: var(--chart-collapsed-height);
+    }
+    
+    .chart-container.fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      border-radius: 0;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .fullscreen-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.5);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      z-index: 10000;
+      font-size: 14px;
+    }
+    
+    .chart-scroll-indicator {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 10px 20px;
+      border-radius: 20px;
+      color: var(--text-color);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: pulse 2s infinite;
+      z-index: 10;
+      cursor: pointer;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .tradingview-widget-container {
+      height: 100%;
+    }
+    
+    .panels-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .data-panel {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+    
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--accent-color);
+    }
+    
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      transition: opacity var(--animation-duration) ease-in-out, transform var(--animation-duration) ease-in-out;
+    }
+    
+    .loading {
+      position: relative;
+    }
+    
+    .loading::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 5;
+    }
+    
+    .loading::before {
+      content: "Loading...";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-color);
+      z-index: 6;
+    }
+    
+    .refresh-data-btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .refresh-data-btn:hover {
+      background-color: var(--primary-dark);
+    }
+    
+    .data-item {
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-color);
+    }
+    
+    .data-item-label {
+      font-size: 0.85rem;
+      color: #999;
+      margin-bottom: 5px;
+    }
+    
+    .data-item-value {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    
+    .positive {
+      color: var(--positive-color);
+      border-left-color: var(--positive-color);
+    }
+    
+    .negative {
+      color: var(--negative-color);
+      border-left-color: var(--negative-color);
+    }
+    
+    .neutral {
+      color: var(--neutral-color);
+      border-left-color: var(--neutral-color);
+    }
+    
+    /* Backtest Styles */
+    .backtest-container {
+      padding: 20px;
+      background-color: var(--card-background);
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    
+    .backtest-form {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .strategy-params {
+      background-color: rgba(30, 136, 229, 0.1);
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .strategy-params h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: var(--primary-color);
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .run-backtest-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .reset-button {
+      background-color: transparent;
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .backtest-results {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .results-header h3 {
+      margin: 0;
+    }
+    
+    .date-range {
+      color: #999;
+      font-size: 14px;
+    }
+    
+    .backtest-chart {
+      height: 300px;
+      margin: 20px 0;
+      position: relative;
+    }
+    
+    .placeholder-chart {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background-color: var(--card-background);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .chart-line {
+      position: absolute;
+      height: 2px;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+    }
+    
+    .chart-line.profit {
+      background: linear-gradient(90deg, transparent, var(--positive-color), var(--positive-color), var(--positive-color));
+      animation: chart-line-anim 2s infinite;
+    }
+    
+    .chart-line.benchmark {
+      bottom: 100px;
+      background: linear-gradient(90deg, transparent, var(--primary-color), var(--primary-color), var(--primary-color));
+      animation: chart-line-anim 2s infinite;
+      animation-delay: 0.5s;
+    }
+    
+    @keyframes chart-line-anim {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .chart-legend {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      gap: 15px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      border-radius: 2px;
+    }
+    
+    .legend-color.profit {
+      background-color: var(--positive-color);
+    }
+    
+    .legend-color.benchmark {
+      background-color: var(--primary-color);
+    }
+    
+    .trades-table {
+      margin-top: 20px;
+    }
+    
+    .trades-table h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    
+    .trades-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    .trades-table th {
+      text-align: left;
+      padding: 10px;
+      background-color: var(--table-header-bg);
+      color: var(--text-color);
+      font-weight: 500;
+    }
+    
+    .trades-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    
+    .trades-table tr:hover {
+      background-color: var(--table-row-hover);
+    }
+    
+    .trades-table tr.positive td:nth-child(6) {
+      color: var(--positive-color);
+    }
+    
+    .trades-table tr.negative td:nth-child(6) {
+      color: var(--negative-color);
+    }
+    
+    .metric-subtitle {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+    
+    .refresh-button, .connect-button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: background-color 0.2s;
+    }
+    
+    .refresh-button:hover, .connect-button:hover {
+      background-color: #0b7dda;
+    }
+    
+    .notifications-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .notification-form-container {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+    
+    .notification-form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .form-group label {
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-group select,
+    .form-group textarea,
+    .form-group input {
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 1rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-color);
+    }
+    
+    .create-button {
+      background-color: var(--secondary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .notifications-list-container {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+    }
+    
+    .notifications-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .notification-item {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    .notification-item.sent {
+      border-left: 4px solid var(--secondary-color);
+    }
+    
+    .notification-item.pending {
+      border-left: 4px solid var(--neutral-color);
+    }
+    
+    /* Additional OpenBB-style components */
+    .metrics-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .metric-card {
+      background-color: var(--card-background);
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+    
+    .metric-title {
+      font-size: 0.9rem;
+      color: #999;
+      margin-bottom: 10px;
+    }
+    
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .metric-change {
+      font-size: 0.9rem;
+    }
+    
+    .tab-container {
+      margin-bottom: 20px;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    
+    .tab.active {
+      border-bottom-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+    
+    @media (max-width: 768px) {
+      .app {
+        flex-direction: column;
+      }
+      
+      .navbar {
+        width: 100%;
+        padding: 10px 0;
+      }
+      
+      .panels-container, .metrics-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <h1>StockAnalysis</h1>
+        </div>
+      </div>
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a href="#" class="nav-link active">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">Notifications</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">API Settings</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">Database Settings</a>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link">Notification Settings</a>
+        </li>
+      </ul>
+    </nav>
+    
+    <main class="main-content">
+      <!-- Dashboard Preview -->
+      <div class="dashboard-container" style="display: block;">
+        <div class="chart-container" id="fullscreen-chart">
+          <div id="tradingview_chart" class="tradingview-widget-container"></div>
+          <button class="fullscreen-button" id="fullscreen-toggle">Fullscreen</button>
+          <div class="chart-scroll-indicator">
+            <i>↓</i> Scroll down to see more details <i>↓</i>
+          </div>
+        </div>
+        
+        <div class="dashboard-content">
+        <div class="dashboard-header">
+          <h1>Stock Dashboard</h1>
+          <div class="stock-selector">
+            <label for="stockSymbol">Select Stock:</label>
+            <select id="stockSymbol">
+              <option value="AAPL">AAPL - Apple Inc.</option>
+              <option value="MSFT">MSFT - Microsoft Corporation</option>
+              <option value="GOOGL">GOOGL - Alphabet Inc.</option>
+              <option value="AMZN">AMZN - Amazon.com, Inc.</option>
+              <option value="META">META - Meta Platforms, Inc.</option>
+              <option value="TSLA">TSLA - Tesla, Inc.</option>
+              <option value="NVDA">NVDA - NVIDIA Corporation</option>
+              <option value="JPM">JPM - JPMorgan Chase & Co.</option>
+              <option value="V">V - Visa Inc.</option>
+              <option value="JNJ">JNJ - Johnson & Johnson</option>
+              <option value="WMT">WMT - Walmart Inc.</option>
+              <option value="PG">PG - Procter & Gamble Co.</option>
+              <option value="MA">MA - Mastercard Inc.</option>
+              <option value="UNH">UNH - UnitedHealth Group Inc.</option>
+              <option value="HD">HD - Home Depot Inc.</option>
+              <option value="BAC">BAC - Bank of America Corp.</option>
+              <option value="XOM">XOM - Exxon Mobil Corporation</option>
+              <option value="INTC">INTC - Intel Corporation</option>
+              <option value="PFE">PFE - Pfizer Inc.</option>
+              <option value="CSCO">CSCO - Cisco Systems, Inc.</option>
+              <option value="VZ">VZ - Verizon Communications Inc.</option>
+              <option value="ADBE">ADBE - Adobe Inc.</option>
+              <option value="CRM">CRM - Salesforce, Inc.</option>
+              <option value="NFLX">NFLX - Netflix, Inc.</option>
+              <option value="DIS">DIS - The Walt Disney Company</option>
+              <option value="CMCSA">CMCSA - Comcast Corporation</option>
+              <option value="PYPL">PYPL - PayPal Holdings, Inc.</option>
+              <option value="COST">COST - Costco Wholesale Corporation</option>
+              <option value="ABT">ABT - Abbott Laboratories</option>
+              <option value="PEP">PEP - PepsiCo, Inc.</option>
+              <option value="TMO">TMO - Thermo Fisher Scientific Inc.</option>
+              <option value="AVGO">AVGO - Broadcom Inc.</option>
+              <option value="ACN">ACN - Accenture plc</option>
+              <option value="MRK">MRK - Merck & Co., Inc.</option>
+              <option value="NKE">NKE - Nike, Inc.</option>
+              <option value="ABBV">ABBV - AbbVie Inc.</option>
+              <option value="ORCL">ORCL - Oracle Corporation</option>
+              <option value="CVX">CVX - Chevron Corporation</option>
+              <option value="DHR">DHR - Danaher Corporation</option>
+              <option value="MCD">MCD - McDonald's Corporation</option>
+              <option value="MDT">MDT - Medtronic plc</option>
+              <option value="NEE">NEE - NextEra Energy, Inc.</option>
+              <option value="LLY">LLY - Eli Lilly and Company</option>
+              <option value="TXN">TXN - Texas Instruments Incorporated</option>
+              <option value="UNP">UNP - Union Pacific Corporation</option>
+              <option value="BMY">BMY - Bristol-Myers Squibb Company</option>
+              <option value="PM">PM - Philip Morris International Inc.</option>
+              <option value="QCOM">QCOM - QUALCOMM Incorporated</option>
+              <option value="AMGN">AMGN - Amgen Inc.</option>
+              <option value="HON">HON - Honeywell International Inc.</option>
+              <option value="T">T - AT&T Inc.</option>
+              <option value="LIN">LIN - Linde plc</option>
+              <option value="IBM">IBM - International Business Machines</option>
+              <option value="SBUX">SBUX - Starbucks Corporation</option>
+              <option value="AMD">AMD - Advanced Micro Devices, Inc.</option>
+              <option value="GS">GS - The Goldman Sachs Group, Inc.</option>
+              <option value="CAT">CAT - Caterpillar Inc.</option>
+              <option value="MMM">MMM - 3M Company</option>
+              <option value="RTX">RTX - Raytheon Technologies Corporation</option>
+              <option value="BLK">BLK - BlackRock, Inc.</option>
+              <option value="BA">BA - The Boeing Company</option>
+              <option value="GE">GE - General Electric Company</option>
+              <option value="GILD">GILD - Gilead Sciences, Inc.</option>
+              <option value="C">C - Citigroup Inc.</option>
+              <option value="MDLZ">MDLZ - Mondelez International, Inc.</option>
+              <option value="INTU">INTU - Intuit Inc.</option>
+              <option value="TGT">TGT - Target Corporation</option>
+              <option value="AMAT">AMAT - Applied Materials, Inc.</option>
+              <option value="BKNG">BKNG - Booking Holdings Inc.</option>
+              <option value="ISRG">ISRG - Intuitive Surgical, Inc.</option>
+              <option value="SPGI">SPGI - S&P Global Inc.</option>
+              <option value="MO">MO - Altria Group, Inc.</option>
+              <option value="MS">MS - Morgan Stanley</option>
+              <option value="ANTM">ANTM - Anthem, Inc.</option>
+              <option value="SCHW">SCHW - The Charles Schwab Corporation</option>
+              <option value="DE">DE - Deere & Company</option>
+              <option value="CVS">CVS - CVS Health Corporation</option>
+              <option value="BDX">BDX - Becton, Dickinson and Company</option>
+              <option value="AXP">AXP - American Express Company</option>
+              <option value="COP">COP - ConocoPhillips</option>
+              <option value="PLD">PLD - Prologis, Inc.</option>
+              <option value="TMUS">TMUS - T-Mobile US, Inc.</option>
+              <option value="TJX">TJX - The TJX Companies, Inc.</option>
+              <option value="LOW">LOW - Lowe's Companies, Inc.</option>
+              <option value="UPS">UPS - United Parcel Service, Inc.</option>
+              <option value="CI">CI - Cigna Corporation</option>
+              <option value="DUK">DUK - Duke Energy Corporation</option>
+              <option value="ZTS">ZTS - Zoetis Inc.</option>
+              <option value="ADSK">ADSK - Autodesk, Inc.</option>
+              <option value="SYK">SYK - Stryker Corporation</option>
+              <option value="PNC">PNC - The PNC Financial Services Group</option>
+              <option value="CSX">CSX - CSX Corporation</option>
+              <option value="CL">CL - Colgate-Palmolive Company</option>
+              <option value="CME">CME - CME Group Inc.</option>
+              <option value="CB">CB - Chubb Limited</option>
+              <option value="ICE">ICE - Intercontinental Exchange, Inc.</option>
+              <option value="SO">SO - The Southern Company</option>
+              <option value="EQIX">EQIX - Equinix, Inc.</option>
+              <option value="USB">USB - U.S. Bancorp</option>
+              <option value="EL">EL - The Estée Lauder Companies Inc.</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Key Metrics (OpenBB Style) -->
+        <div class="metrics-container">
+          <div class="metric-card">
+            <div class="metric-title">Current Price</div>
+            <div class="metric-value">$184.92</div>
+            <div class="metric-change positive">+2.47 (+1.35%)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Market Cap</div>
+            <div class="metric-value">$2.89T</div>
+            <div class="metric-change">Rank: #1</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">52-Week Range</div>
+            <div class="metric-value">$124.17 - $198.23</div>
+            <div class="metric-change">Current: 76%</div>
+          </div>
+        </div>
+        
+        <!-- TradingView Chart -->
+        <button class="refresh-data-btn">
+          <i>↻</i> Refresh Data
+        </button>
+        
+        <!-- Tabs for different data views -->
+        <div class="tab-container">
+          <div class="tabs">
+            <div class="tab active">Overview</div>
+            <div class="tab">Financials</div>
+            <div class="tab">Technical</div>
+            <div class="tab">AI Predictions</div>
+            <div class="tab">Backtest</div>
+          </div>
+        </div>
+        
+        <div class="panels-container">
+          <div class="data-panel">
+            <div class="panel-header">
+              <h2>Stock Data</h2>
+              <button class="refresh-button">Refresh Data</button>
+            </div>
+            
+            <div class="data-grid">
+              <div class="data-item">
+                <div class="data-item-label">Open</div>
+                <div class="data-item-value">$182.45</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">High</div>
+                <div class="data-item-value">$185.67</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Low</div>
+                <div class="data-item-value">$181.23</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Close</div>
+                <div class="data-item-value">$184.92</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Volume</div>
+                <div class="data-item-value">32.5M</div>
+              </div>
+              <div class="data-item positive">
+                <div class="data-item-label">Change</div>
+                <div class="data-item-value">+2.47 (+1.35%)</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">P/E Ratio</div>
+                <div class="data-item-value">30.45</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">EPS (TTM)</div>
+                <div class="data-item-value">$6.07</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="data-panel">
+            <div class="panel-header">
+              <h2>AI Predictions</h2>
+              <button class="connect-button">Connect AI</button>
+            </div>
+            
+            <div class="data-grid">
+              <div class="data-item positive">
+                <div class="data-item-label">Short-term (1 week)</div>
+                <div class="data-item-value">Bullish ($189.50)</div>
+              </div>
+              <div class="data-item positive">
+                <div class="data-item-label">Medium-term (1 month)</div>
+                <div class="data-item-value">Bullish ($195.75)</div>
+              </div>
+              <div class="data-item neutral">
+                <div class="data-item-label">Long-term (3 months)</div>
+                <div class="data-item-value">Neutral ($185.20)</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Confidence</div>
+                <div class="data-item-value">72%</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Volatility Forecast</div>
+                <div class="data-item-value">Medium (±3.2%)</div>
+              </div>
+              <div class="data-item">
+                <div class="data-item-label">Sentiment Analysis</div>
+                <div class="data-item-value">Positive (78/100)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Backtest Section (hidden by default) -->
+        <div class="backtest-container" style="display: none;">
+          <h2>Backtest Trading Strategies</h2>
+          
+          <div class="backtest-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="strategy">Strategy:</label>
+                <select id="strategy">
+                  <option value="sma_crossover">SMA Crossover</option>
+                  <option value="macd">MACD</option>
+                  <option value="rsi">RSI Overbought/Oversold</option>
+                  <option value="bollinger">Bollinger Bands</option>
+                  <option value="custom">Custom Strategy</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="timeframe">Timeframe:</label>
+                <select id="timeframe">
+                  <option value="1y">1 Year</option>
+                  <option value="2y">2 Years</option>
+                  <option value="5y">5 Years</option>
+                  <option value="10y">10 Years</option>
+                  <option value="max">Max Available</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="initial_capital">Initial Capital ($):</label>
+                <input type="number" id="initial_capital" value="10000" min="1000" step="1000">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="position_size">Position Size (%):</label>
+                <input type="number" id="position_size" value="100" min="1" max="100">
+              </div>
+              
+              <div class="form-group">
+                <label for="stop_loss">Stop Loss (%):</label>
+                <input type="number" id="stop_loss" value="5" min="0" max="50" step="0.5">
+              </div>
+              
+              <div class="form-group">
+                <label for="take_profit">Take Profit (%):</label>
+                <input type="number" id="take_profit" value="15" min="0" max="100" step="0.5">
+              </div>
+            </div>
+            
+            <div class="strategy-params">
+              <h3>Strategy Parameters</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="param1">Fast SMA Period:</label>
+                  <input type="number" id="param1" value="20" min="1" max="200">
+                </div>
+                
+                <div class="form-group">
+                  <label for="param2">Slow SMA Period:</label>
+                  <input type="number" id="param2" value="50" min="1" max="200">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button class="run-backtest-button">Run Backtest</button>
+              <button class="reset-button">Reset</button>
+            </div>
+          </div>
+          
+          <div class="backtest-results">
+            <div class="results-header">
+              <h3>Backtest Results</h3>
+              <div class="date-range">Period: Jan 2022 - Dec 2022</div>
+            </div>
+            
+            <div class="metrics-container">
+              <div class="metric-card">
+                <div class="metric-title">Total Return</div>
+                <div class="metric-value positive">+24.8%</div>
+                <div class="metric-subtitle">vs. Market: +12.3%</div>
+              </div>
+              
+              <div class="metric-card">
+                <div class="metric-title">Sharpe Ratio</div>
+                <div class="metric-value">1.87</div>
+                <div class="metric-subtitle">Risk-adjusted return</div>
+              </div>
+              
+              <div class="metric-card">
+                <div class="metric-title">Max Drawdown</div>
+                <div class="metric-value negative">-12.4%</div>
+                <div class="metric-subtitle">Largest decline</div>
+              </div>
+              
+              <div class="metric-card">
+                <div class="metric-title">Win Rate</div>
+                <div class="metric-value">68%</div>
+                <div class="metric-subtitle">17 of 25 trades</div>
+              </div>
+            </div>
+            
+            <div class="chart-container backtest-chart">
+              <div id="backtest_chart" class="tradingview-widget-container">
+                <!-- Backtest Chart will be loaded here -->
+                <div class="placeholder-chart">
+                  <div class="chart-line profit"></div>
+                  <div class="chart-line benchmark"></div>
+                  <div class="chart-legend">
+                    <div class="legend-item"><span class="legend-color profit"></span> Strategy</div>
+                    <div class="legend-item"><span class="legend-color benchmark"></span> Benchmark</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="trades-table">
+              <h3>Trade History</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Shares</th>
+                    <th>P/L</th>
+                    <th>Return</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="positive">
+                    <td>2022-01-15</td>
+                    <td>BUY</td>
+                    <td>$172.45</td>
+                    <td>58</td>
+                    <td>-</td>
+                    <td>-</td>
+                  </tr>
+                  <tr class="positive">
+                    <td>2022-02-03</td>
+                    <td>SELL</td>
+                    <td>$185.94</td>
+                    <td>58</td>
+                    <td>$782.46</td>
+                    <td>+7.8%</td>
+                  </tr>
+                  <tr class="negative">
+                    <td>2022-03-12</td>
+                    <td>BUY</td>
+                    <td>$165.38</td>
+                    <td>62</td>
+                    <td>-</td>
+                    <td>-</td>
+                  </tr>
+                  <tr class="negative">
+                    <td>2022-03-28</td>
+                    <td>SELL</td>
+                    <td>$157.11</td>
+                    <td>62</td>
+                    <td>-$512.86</td>
+                    <td>-5.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Notifications Preview (hidden by default) -->
+      <div class="notifications-container" style="display: none;">
+        <h1>Notifications</h1>
+        
+        <div class="notification-form-container">
+          <h2>Create New Notification</h2>
+          
+          <form class="notification-form">
+            <div class="form-group">
+              <label for="messageType">Type:</label>
+              <select id="messageType">
+                <option>General</option>
+                <option>Alert</option>
+                <option>Update</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="message">Message:</label>
+              <textarea 
+                id="message" 
+                placeholder="Enter notification message..."
+                rows="4"
+              ></textarea>
+              <small>You can use Markdown formatting in your message.</small>
+            </div>
+            
+            <div class="form-group checkbox-group">
+              <label>
+                <input type="checkbox"> Send immediately
+              </label>
+            </div>
+            
+            <button type="submit" class="create-button">
+              Create Notification
+            </button>
+          </form>
+        </div>
+        
+        <div class="notifications-list-container">
+          <div class="notifications-header">
+            <h2>Notification History</h2>
+            <div class="filter-controls">
+              <label for="filter">Filter:</label>
+              <select id="filter">
+                <option>All</option>
+                <option>Sent</option>
+                <option>Pending</option>
+              </select>
+              <button class="refresh-button">Refresh</button>
+            </div>
+          </div>
+          
+          <div class="notifications-list">
+            <div class="notification-item sent">
+              <div class="notification-header">
+                <span class="notification-type">Update</span>
+                <span class="notification-status">Sent</span>
+              </div>
+              <div class="notification-message">Daily summary for your tracked stocks: AAPL +1.35%, MSFT -0.42%, GOOGL +0.87%</div>
+              <div class="notification-meta">
+                <div><strong>Created:</strong> 2023-06-15 08:00:00</div>
+                <div><strong>Sent:</strong> 2023-06-15 08:00:05</div>
+              </div>
+              <div class="notification-actions">
+                <button class="delete-button">Delete</button>
+              </div>
+            </div>
+            
+            <div class="notification-item pending">
+              <div class="notification-header">
+                <span class="notification-type">Alert</span>
+                <span class="notification-status">Pending</span>
+              </div>
+              <div class="notification-message">AAPL has reached your target price of $185.00!</div>
+              <div class="notification-meta">
+                <div><strong>Created:</strong> 2023-06-15 14:30:00</div>
+              </div>
+              <div class="notification-actions">
+                <button class="send-button">Send Now</button>
+                <button class="delete-button">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  
+  <script>
+    // Global variables
+    let currentSymbol = "NASDAQ:AAPL";
+    let isDataLoading = false;
+    
+    // Initialize TradingView Widget
+    let tvWidget = null;
+    
+    // Function to initialize TradingView widget
+    function initTradingViewWidget() {
+      try {
+        // Check if TradingView is loaded
+        if (typeof TradingView === 'undefined') {
+          console.error('TradingView library is not loaded');
+          return;
+        }
+        
+        // Check if container exists
+        const container = document.getElementById('tradingview_chart');
+        if (!container) {
+          console.error('TradingView container not found');
+          return;
+        }
+        
+        tvWidget = new TradingView.widget({
+          "width": "100%",
+          "height": "100%",
+          "symbol": "NASDAQ:AAPL",
+          "interval": "D",
+          "timezone": "Etc/UTC",
+          "theme": "dark",
+          "style": "1",
+          "locale": "en",
+          "toolbar_bg": "#f1f3f6",
+          "enable_publishing": false,
+          "withdateranges": true,
+          "hide_side_toolbar": false,
+          "allow_symbol_change": true,
+          "studies": [
+            "MASimple@tv-basicstudies",
+            "RSI@tv-basicstudies",
+            "MACD@tv-basicstudies"
+          ],
+          "container_id": "tradingview_chart"
+        });
+        
+        console.log('TradingView widget initialized');
+      } catch (error) {
+        console.error('Error initializing TradingView widget:', error);
+      }
+    }
+    
+    // Initialize widget when page loads
+    window.addEventListener('load', initTradingViewWidget);
+    
+    // Function to handle scroll events for chart animation
+    function handleScroll() {
+      const chart = document.getElementById('fullscreen-chart');
+      const dashboardContent = document.querySelector('.dashboard-content');
+      const scrollY = window.scrollY;
+      const chartBottom = chart.offsetTop + chart.offsetHeight;
+      
+      // When user scrolls down, collapse the chart and show content
+      if (scrollY > 100) {
+        chart.classList.add('collapsed');
+        dashboardContent.classList.add('visible');
+        document.querySelector('.chart-scroll-indicator').style.display = 'none';
+      } else {
+        chart.classList.remove('collapsed');
+        // Only hide content when scrolled all the way to top
+        if (scrollY < 50) {
+          dashboardContent.classList.remove('visible');
+          document.querySelector('.chart-scroll-indicator').style.display = 'flex';
+        }
+      }
+    }
+    
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
+    
+    // Click on scroll indicator to scroll down
+    document.querySelector('.chart-scroll-indicator').addEventListener('click', function() {
+      window.scrollTo({
+        top: window.innerHeight * 0.5,
+        behavior: 'smooth'
+      });
+    });
+    
+    // Function to fetch stock data from API
+    async function fetchStockData(symbol) {
+      try {
+        // In a real app, this would be an actual API call
+        // For demo purposes, we'll simulate an API response with a delay
+        isDataLoading = true;
+        updateLoadingState(true);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Parse the symbol to get ticker
+        const ticker = symbol.split(':')[1] || symbol;
+        
+        // Generate mock data based on the ticker
+        const mockData = generateMockData(ticker);
+        
+        // Update UI with the data
+        updateUIWithStockData(mockData);
+        
+        isDataLoading = false;
+        updateLoadingState(false);
+        
+        return mockData;
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+        isDataLoading = false;
+        updateLoadingState(false);
+        alert('Error fetching stock data. Please try again.');
+      }
+    }
+    
+    // Function to generate mock data based on ticker
+     function generateMockData(ticker) {
+       // Create different data for different stocks
+       const stocksData = {
+         'AAPL': {
+           currentPrice: 187.68,
+           marketCap: '2.94T',
+           weekRange: '124.17 - 198.23',
+           open: 186.73,
+           high: 188.45,
+           low: 185.83,
+           close: 187.68,
+           volume: '54.3M',
+           change: '+0.95',
+           peRatio: '31.28',
+           eps: '6.00',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '78%',
+             mediumTerm: 'Neutral',
+             mediumTermConfidence: '65%',
+             longTerm: 'Bullish',
+             longTermConfidence: '72%',
+             volatility: 'Low (±2.1%)',
+             sentiment: 'Positive (82/100)'
+           }
+         },
+         'MSFT': {
+           currentPrice: 378.92,
+           marketCap: '2.81T',
+           weekRange: '275.37 - 384.12',
+           open: 376.45,
+           high: 380.11,
+           low: 375.23,
+           close: 378.92,
+           volume: '22.7M',
+           change: '+2.47',
+           peRatio: '36.79',
+           eps: '10.30',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '82%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '75%',
+             longTerm: 'Bullish',
+             longTermConfidence: '80%',
+             volatility: 'Low (±1.8%)',
+             sentiment: 'Very Positive (90/100)'
+           }
+         },
+         'GOOGL': {
+           currentPrice: 142.65,
+           marketCap: '1.79T',
+           weekRange: '102.21 - 143.95',
+           open: 141.87,
+           high: 143.10,
+           low: 141.20,
+           close: 142.65,
+           volume: '18.9M',
+           change: '+0.78',
+           peRatio: '24.51',
+           eps: '5.82',
+           aiPredictions: {
+             shortTerm: 'Neutral',
+             shortTermConfidence: '62%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '70%',
+             longTerm: 'Bullish',
+             longTermConfidence: '75%',
+             volatility: 'Medium (±2.8%)',
+             sentiment: 'Positive (78/100)'
+           }
+         },
+         'AMZN': {
+           currentPrice: 178.75,
+           marketCap: '1.85T',
+           weekRange: '101.15 - 180.14',
+           open: 177.42,
+           high: 179.35,
+           low: 176.89,
+           close: 178.75,
+           volume: '31.2M',
+           change: '+1.33',
+           peRatio: '88.93',
+           eps: '2.01',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '75%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '68%',
+             longTerm: 'Bullish',
+             longTermConfidence: '73%',
+             volatility: 'Medium (±3.0%)',
+             sentiment: 'Positive (80/100)'
+           }
+         },
+         'META': {
+           currentPrice: 472.96,
+           marketCap: '1.21T',
+           weekRange: '244.61 - 485.96',
+           open: 470.11,
+           high: 475.20,
+           low: 468.55,
+           close: 472.96,
+           volume: '15.8M',
+           change: '+2.85',
+           peRatio: '27.14',
+           eps: '17.42',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '76%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '72%',
+             longTerm: 'Bullish',
+             longTermConfidence: '68%',
+             volatility: 'Medium (±2.5%)',
+             sentiment: 'Positive (81/100)'
+           }
+         },
+         'TSLA': {
+           currentPrice: 175.34,
+           marketCap: '558.2B',
+           weekRange: '138.80 - 299.29',
+           open: 172.98,
+           high: 177.45,
+           low: 171.52,
+           close: 175.34,
+           volume: '98.6M',
+           change: '+2.36',
+           peRatio: '50.67',
+           eps: '3.46',
+           aiPredictions: {
+             shortTerm: 'Neutral',
+             shortTermConfidence: '55%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '65%',
+             longTerm: 'Bullish',
+             longTermConfidence: '70%',
+             volatility: 'High (±4.2%)',
+             sentiment: 'Mixed (65/100)'
+           }
+         },
+         'NVDA': {
+           currentPrice: 950.02,
+           marketCap: '2.34T',
+           weekRange: '222.97 - 974.00',
+           open: 940.15,
+           high: 955.10,
+           low: 935.22,
+           close: 950.02,
+           volume: '42.1M',
+           change: '+9.87',
+           peRatio: '80.51',
+           eps: '11.80',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '85%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '82%',
+             longTerm: 'Bullish',
+             longTermConfidence: '88%',
+             volatility: 'High (±3.8%)',
+             sentiment: 'Very Positive (92/100)'
+           }
+         },
+         'JPM': {
+           currentPrice: 198.48,
+           marketCap: '570.6B',
+           weekRange: '135.19 - 200.94',
+           open: 197.25,
+           high: 199.12,
+           low: 196.80,
+           close: 198.48,
+           volume: '8.2M',
+           change: '+1.23',
+           peRatio: '12.01',
+           eps: '16.52',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '72%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '68%',
+             longTerm: 'Bullish',
+             longTermConfidence: '75%',
+             volatility: 'Low (±1.9%)',
+             sentiment: 'Positive (78/100)'
+           }
+         },
+         'V': {
+           currentPrice: 275.96,
+           marketCap: '565.8B',
+           weekRange: '216.14 - 290.96',
+           open: 274.50,
+           high: 276.85,
+           low: 273.92,
+           close: 275.96,
+           volume: '5.7M',
+           change: '+1.46',
+           peRatio: '30.99',
+           eps: '8.90',
+           aiPredictions: {
+             shortTerm: 'Bullish',
+             shortTermConfidence: '74%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '70%',
+             longTerm: 'Bullish',
+             longTermConfidence: '76%',
+             volatility: 'Low (±1.7%)',
+             sentiment: 'Positive (80/100)'
+           }
+         },
+         'JNJ': {
+           currentPrice: 151.34,
+           marketCap: '364.2B',
+           weekRange: '143.13 - 175.97',
+           open: 150.87,
+           high: 152.10,
+           low: 150.45,
+           close: 151.34,
+           volume: '6.3M',
+           change: '+0.47',
+           peRatio: '9.45',
+           eps: '16.01',
+           aiPredictions: {
+             shortTerm: 'Neutral',
+             shortTermConfidence: '60%',
+             mediumTerm: 'Bullish',
+             mediumTermConfidence: '65%',
+             longTerm: 'Bullish',
+             longTermConfidence: '72%',
+             volatility: 'Low (±1.5%)',
+             sentiment: 'Positive (75/100)'
+           }
+         }
+       };
+       
+       // Generate random data for other stocks if not in the predefined list
+       if (!stocksData[ticker]) {
+         // Generate random price between 50 and 500
+         const basePrice = Math.floor(Math.random() * 450) + 50;
+         const priceVariation = basePrice * 0.02; // 2% variation
+         
+         // Generate random market cap between 10B and 2T
+         const marketCapValue = Math.floor(Math.random() * 1990) + 10;
+         const marketCapSuffix = marketCapValue >= 1000 ? 'T' : 'B';
+         const marketCap = marketCapValue >= 1000 
+           ? (marketCapValue / 1000).toFixed(2) + marketCapSuffix 
+           : marketCapValue + marketCapSuffix;
+         
+         // Generate random 52-week range
+         const lowRange = (basePrice * 0.7).toFixed(2);
+         const highRange = (basePrice * 1.3).toFixed(2);
+         
+         // Generate random daily prices
+         const open = (basePrice - priceVariation + Math.random() * priceVariation * 2).toFixed(2);
+         const high = (Math.max(open, basePrice) + Math.random() * priceVariation).toFixed(2);
+         const low = (Math.min(open, basePrice) - Math.random() * priceVariation).toFixed(2);
+         const close = basePrice.toFixed(2);
+         
+         // Generate random volume
+         const volumeValue = Math.floor(Math.random() * 50) + 1;
+         const volume = volumeValue + 'M';
+         
+         // Generate random change
+         const changeValue = (close - open).toFixed(2);
+         const change = changeValue >= 0 ? '+' + changeValue : changeValue;
+         
+         // Generate random PE ratio and EPS
+         const peRatio = (Math.random() * 50 + 10).toFixed(2);
+         const eps = (basePrice / (Math.random() * 20 + 10)).toFixed(2);
+         
+         // Generate random AI predictions
+         const sentiments = ['Bearish', 'Neutral', 'Bullish'];
+         const shortTermIndex = Math.floor(Math.random() * 3);
+         const mediumTermIndex = Math.floor(Math.random() * 3);
+         const longTermIndex = Math.floor(Math.random() * 3);
+         
+         const shortTermConfidence = Math.floor(Math.random() * 30 + 50) + '%';
+         const mediumTermConfidence = Math.floor(Math.random() * 30 + 50) + '%';
+         const longTermConfidence = Math.floor(Math.random() * 30 + 50) + '%';
+         
+         const volatilityLevels = ['Low', 'Medium', 'High'];
+         const volatilityIndex = Math.floor(Math.random() * 3);
+         const volatilityValue = (Math.random() * 3 + 1).toFixed(1);
+         const volatility = `${volatilityLevels[volatilityIndex]} (±${volatilityValue}%)`;
+         
+         const sentimentValue = Math.floor(Math.random() * 30 + 50);
+         const sentimentLevels = ['Mixed', 'Positive', 'Very Positive'];
+         const sentimentIndex = sentimentValue < 65 ? 0 : (sentimentValue < 80 ? 1 : 2);
+         const sentiment = `${sentimentLevels[sentimentIndex]} (${sentimentValue}/100)`;
+         
+         return {
+           currentPrice: parseFloat(close),
+           marketCap,
+           weekRange: `${lowRange} - ${highRange}`,
+           open: parseFloat(open),
+           high: parseFloat(high),
+           low: parseFloat(low),
+           close: parseFloat(close),
+           volume,
+           change,
+           peRatio,
+           eps,
+           aiPredictions: {
+             shortTerm: sentiments[shortTermIndex],
+             shortTermConfidence,
+             mediumTerm: sentiments[mediumTermIndex],
+             mediumTermConfidence,
+             longTerm: sentiments[longTermIndex],
+             longTermConfidence,
+             volatility,
+             sentiment
+           }
+         };
+       }
+       
+       // Return data for the requested ticker
+       return stocksData[ticker];
+     }
+    
+    // Function to update UI with stock data
+     function updateUIWithStockData(data) {
+       try {
+         if (!data) {
+           console.error('No data provided to updateUIWithStockData');
+           return;
+         }
+         
+         // Update key metrics
+         const metricCards = document.querySelectorAll('.metric-card');
+         if (metricCards && metricCards.length >= 3) {
+           // Safely update metric values with null checks
+           const updateMetricValue = (metric, selector, value) => {
+             const element = metric.querySelector(selector);
+             if (element) element.textContent = value;
+           };
+           
+           updateMetricValue(metricCards[0], '.metric-value', `$${data.currentPrice || 0}`);
+           updateMetricValue(metricCards[1], '.metric-value', `${data.marketCap || 'N/A'}`);
+           updateMetricValue(metricCards[2], '.metric-value', `${data.weekRange || 'N/A'}`);
+         }
+         
+         // Update stock data grid
+         const stockDataItems = document.querySelectorAll('.data-grid .data-item');
+         if (stockDataItems && stockDataItems.length >= 8) {
+           // Safely update data items with null checks
+           const updateDataItemValue = (item, value) => {
+             const element = item.querySelector('.data-item-value');
+             if (element) element.textContent = value;
+           };
+           
+           updateDataItemValue(stockDataItems[0], `$${data.open || 0}`);
+           updateDataItemValue(stockDataItems[1], `$${data.high || 0}`);
+           updateDataItemValue(stockDataItems[2], `$${data.low || 0}`);
+           updateDataItemValue(stockDataItems[3], `$${data.close || 0}`);
+           updateDataItemValue(stockDataItems[4], data.volume || 'N/A');
+           updateDataItemValue(stockDataItems[5], `${data.change || 0}`);
+           updateDataItemValue(stockDataItems[6], data.peRatio || 'N/A');
+           updateDataItemValue(stockDataItems[7], `$${data.eps || 0}`);
+         }
+         
+         // Update AI predictions
+         // First find the AI predictions panel
+         const panels = document.querySelectorAll('.data-panel');
+         let aiPanel = null;
+         
+         // Look for the panel with AI Predictions header
+         if (panels && panels.length > 0) {
+           for (let i = 0; i < panels.length; i++) {
+             const header = panels[i].querySelector('.panel-header h2');
+             if (header && header.textContent && header.textContent.includes('AI Predictions')) {
+               aiPanel = panels[i];
+               break;
+             }
+           }
+           
+           if (aiPanel && data.aiPredictions) {
+             const aiItems = aiPanel.querySelectorAll('.data-item');
+             if (aiItems && aiItems.length >= 8) {
+               // Safely update AI prediction values with null checks
+               const updateAiValue = (item, value) => {
+                 const element = item.querySelector('.data-item-value');
+                 if (element) element.textContent = value || 'N/A';
+               };
+               
+               updateAiValue(aiItems[0], data.aiPredictions.shortTerm);
+               updateAiValue(aiItems[1], data.aiPredictions.shortTermConfidence);
+               updateAiValue(aiItems[2], data.aiPredictions.mediumTerm);
+               updateAiValue(aiItems[3], data.aiPredictions.mediumTermConfidence);
+               updateAiValue(aiItems[4], data.aiPredictions.longTerm);
+               updateAiValue(aiItems[5], data.aiPredictions.longTermConfidence);
+               updateAiValue(aiItems[6], data.aiPredictions.volatility);
+               updateAiValue(aiItems[7], data.aiPredictions.sentiment);
+             }
+           }
+         }
+       } catch (error) {
+         console.error('Error updating UI with stock data:', error);
+       }
+     }
+    
+    // Function to update loading state
+     function updateLoadingState(isLoading) {
+       try {
+         const dataContainers = document.querySelectorAll('.data-panel');
+         if (dataContainers && dataContainers.length > 0) {
+           dataContainers.forEach(container => {
+             if (container) {
+               if (isLoading) {
+                 container.classList.add('loading');
+               } else {
+                 container.classList.remove('loading');
+               }
+             }
+           });
+         }
+       } catch (error) {
+         console.error('Error updating loading state:', error);
+       }
+     }
+    
+    // Stock selector change handler
+     document.getElementById('stockSymbol').addEventListener('change', function() {
+       const symbol = this.value;
+       currentSymbol = `NASDAQ:${symbol}`;
+       
+       // Update TradingView chart if widget is initialized
+       if (tvWidget && typeof tvWidget.setSymbol === 'function') {
+         try {
+           tvWidget.setSymbol(currentSymbol, 'D', function() {
+             console.log('Symbol changed to:', currentSymbol);
+           });
+         } catch (error) {
+           console.error('Error changing symbol:', error);
+         }
+       } else {
+         console.warn('TradingView widget not initialized or setSymbol not available');
+       }
+       
+       // Fetch and update stock data
+       fetchStockData(symbol);
+     });
+    
+    // Refresh data button handler
+    document.querySelector('.refresh-data-btn').addEventListener('click', function() {
+      if (!isDataLoading) {
+        fetchStockData(currentSymbol.split(':')[1] || currentSymbol);
+      }
+    });
+    
+    // Function to check if TradingView is loaded and initialize if needed
+    function checkTradingViewStatus() {
+      if (!tvWidget && typeof TradingView !== 'undefined') {
+        console.log('TradingView library detected, initializing widget...');
+        initTradingViewWidget();
+      } else if (!tvWidget) {
+        console.warn('TradingView library not loaded yet, will retry...');
+        setTimeout(checkTradingViewStatus, 1000); // Check again in 1 second
+      }
+    }
+    
+    // Initialize with default stock data
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initial data load
+      setTimeout(() => {
+        fetchStockData('AAPL');
+      }, 1000);
+      
+      // Check TradingView status
+      checkTradingViewStatus();
+      
+      // Setup fullscreen toggle
+      const fullscreenToggle = document.getElementById('fullscreen-toggle');
+      const chartContainer = document.getElementById('fullscreen-chart');
+      
+      if (fullscreenToggle && chartContainer) {
+        fullscreenToggle.addEventListener('click', function() {
+          chartContainer.classList.toggle('fullscreen');
+          
+          if (chartContainer.classList.contains('fullscreen')) {
+            fullscreenToggle.textContent = 'Exit Fullscreen';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling when in fullscreen
+            
+            // Reinitialize TradingView widget to adjust to new size
+            if (tvWidget && typeof tvWidget.resize === 'function') {
+              try {
+                tvWidget.resize(window.innerWidth, window.innerHeight);
+              } catch (error) {
+                console.error('Error resizing widget:', error);
+              }
+            } else {
+              // If widget isn't available, try to initialize it
+              checkTradingViewStatus();
+            }
+          } else {
+            fullscreenToggle.textContent = 'Fullscreen';
+            document.body.style.overflow = ''; // Restore scrolling
+            
+            // Resize back to normal
+            if (tvWidget && typeof tvWidget.resize === 'function') {
+              try {
+                tvWidget.resize();
+              } catch (error) {
+                console.error('Error resizing widget:', error);
+              }
+            }
+          }
+        });
+      }
+      
+      // Handle window resize for fullscreen mode
+      window.addEventListener('resize', function() {
+        if (chartContainer && chartContainer.classList.contains('fullscreen') && 
+            tvWidget && typeof tvWidget.resize === 'function') {
+          try {
+            tvWidget.resize(window.innerWidth, window.innerHeight);
+          } catch (error) {
+            console.error('Error resizing widget on window resize:', error);
+          }
+        }
+      });
+    });
+    
+    // Simple navigation simulation
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Remove active class from all links
+        document.querySelectorAll('.nav-link').forEach(l => {
+          l.classList.remove('active');
+        });
+        
+        // Add active class to clicked link
+        this.classList.add('active');
+        
+        // Hide all content sections
+        document.querySelector('.dashboard-container').style.display = 'none';
+        document.querySelector('.notifications-container').style.display = 'none';
+        
+        // Show appropriate content based on clicked link
+        if (this.textContent.trim() === 'Dashboard') {
+          document.querySelector('.dashboard-container').style.display = 'block';
+        } else if (this.textContent.trim() === 'Notifications') {
+          document.querySelector('.notifications-container').style.display = 'block';
+        }
+      });
+    });
+    
+    // Tab switching simulation
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(t => {
+          t.classList.remove('active');
+        });
+        
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        // Hide all content sections
+         document.querySelector('.stock-data').style.display = 'none';
+         document.querySelector('.ai-predictions').style.display = 'none';
+         document.querySelector('.backtest-container').style.display = 'none';
+         
+         // Show appropriate content based on clicked tab
+         const tabText = this.textContent.trim();
+         if (tabText === 'Overview' || tabText === 'Financials' || tabText === 'Technical') {
+           document.querySelector('.stock-data').style.display = 'grid';
+         } else if (tabText === 'AI Predictions') {
+           document.querySelector('.ai-predictions').style.display = 'grid';
+         } else if (tabText === 'Backtest') {
+           document.querySelector('.backtest-container').style.display = 'block';
+         }
+      });
+    });
+    
+    // Backtest strategy change handler
+    document.getElementById('strategy').addEventListener('change', function() {
+      const strategy = this.value;
+      const paramsContainer = document.querySelector('.strategy-params');
+      const param1Label = document.querySelector('label[for="param1"]');
+      const param2Label = document.querySelector('label[for="param2"]');
+      
+      // Update parameter labels based on selected strategy
+      switch(strategy) {
+        case 'sma_crossover':
+          param1Label.textContent = 'Fast SMA Period:';
+          param2Label.textContent = 'Slow SMA Period:';
+          document.getElementById('param1').value = '20';
+          document.getElementById('param2').value = '50';
+          break;
+        case 'macd':
+          param1Label.textContent = 'Fast EMA Period:';
+          param2Label.textContent = 'Slow EMA Period:';
+          document.getElementById('param1').value = '12';
+          document.getElementById('param2').value = '26';
+          break;
+        case 'rsi':
+          param1Label.textContent = 'RSI Period:';
+          param2Label.textContent = 'Overbought Level:';
+          document.getElementById('param1').value = '14';
+          document.getElementById('param2').value = '70';
+          break;
+        case 'bollinger':
+          param1Label.textContent = 'SMA Period:';
+          param2Label.textContent = 'Standard Deviation:';
+          document.getElementById('param1').value = '20';
+          document.getElementById('param2').value = '2';
+          break;
+      }
+    });
+    
+    // Run backtest button handler
+    document.querySelector('.run-backtest-button').addEventListener('click', function() {
+      // Simulate loading state
+      this.textContent = 'Running...';
+      this.disabled = true;
+      
+      // Simulate backtest running
+      setTimeout(() => {
+        this.textContent = 'Run Backtest';
+        this.disabled = false;
+        
+        // Show results (already in the HTML)
+        document.querySelector('.backtest-results').style.display = 'block';
+        
+        // Update chart with new data (in a real app)
+        // updateBacktestChart();
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
